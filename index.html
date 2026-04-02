@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إلى رهف - من قيس جازي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-glow: #ff4d6d;
+            --secondary-glow: #c9184a;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            font-family: 'Cairo', sans-serif;
+            color: white;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .font-poetry {
+            font-family: 'Amiri', serif;
+            line-height: 2;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .heart-btn {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            background-color: var(--primary-glow);
+            transform: rotate(-45deg);
+            animation: heartbeat 1.5s infinite;
+            cursor: pointer;
+            box-shadow: 0 0 40px var(--primary-glow);
+            transition: all 0.3s ease;
+        }
+
+        .heart-btn:hover {
+            box-shadow: 0 0 60px var(--secondary-glow);
+            transform: rotate(-45deg) scale(1.1);
+        }
+
+        .heart-btn::before,
+        .heart-btn::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: var(--primary-glow);
+            border-radius: 50%;
+        }
+
+        .heart-btn::before {
+            top: -50px;
+            left: 0;
+        }
+
+        .heart-btn::after {
+            top: 0;
+            left: 50px;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: rotate(-45deg) scale(1); }
+            14% { transform: rotate(-45deg) scale(1.3); }
+            28% { transform: rotate(-45deg) scale(1); }
+            42% { transform: rotate(-45deg) scale(1.3); }
+            70% { transform: rotate(-45deg) scale(1); }
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 77, 109, 0.5);
+        }
+
+        #poetry-text {
+            transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .fade-in-up {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .floating-note {
+            position: absolute;
+            animation: floatUp 8s linear forwards;
+            opacity: 0;
+            color: #ffb3c6;
+            font-size: 24px;
+            z-index: 1;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        /* Signature glow */
+        .signature-glow {
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 0px 15px rgba(255, 154, 158, 0.4);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen relative">
+
+    <!-- تم وضع اسم ملف الأغنية الذي قمت برفعه هنا -->
+    <audio id="bg-music" src="gemini_music (1).mp3" loop></audio>
+
+    <!-- Canvas for Particles (Stars & Magic Dust) -->
+    <canvas id="canvas-container"></canvas>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen" class="absolute inset-0 flex flex-col items-center justify-center z-50 transition-opacity duration-1000">
+        <h1 class="text-4xl md:text-6xl font-poetry text-glow mb-16 text-center px-4">إلى من سكنت الروح.. رهف</h1>
+        <div class="mt-12" onclick="startExperience()">
+            <div class="heart-btn"></div>
+        </div>
+        <p class="mt-20 text-lg md:text-xl font-light text-pink-200 animate-pulse text-center">اضغطي على القلب لتبدأ حكايتنا</p>
+    </div>
+
+    <!-- Main Content (Hidden Initially) -->
+    <div id="main-content" class="absolute inset-0 flex flex-col items-center justify-center z-40 opacity-0 pointer-events-none transition-opacity duration-1000 p-4">
+        
+        <div class="glass-panel p-8 md:p-12 rounded-3xl max-w-3xl w-full text-center relative overflow-hidden">
+            <!-- Decorative corner elements -->
+            <div class="absolute top-0 left-0 p-4 text-pink-400 opacity-50">✨</div>
+            <div class="absolute bottom-0 right-0 p-4 text-pink-400 opacity-50">✨</div>
+
+            <div class="min-h-[200px] flex items-center justify-center">
+                <p id="poetry-text" class="font-poetry text-2xl md:text-4xl lg:text-5xl text-white text-glow leading-relaxed"></p>
+            </div>
+            
+            <!-- Audio Equalizer Animation -->
+            <div class="flex justify-center items-end space-x-1 space-x-reverse mt-10 h-8" id="equalizer">
+                <div class="w-1 bg-pink-500 rounded-full animate-[bounce_1s_infinite] h-full"></div>
+                <div class="w-1 bg-pink-400 rounded-full animate-[bounce_1.2s_infinite] h-3/4"></div>
+                <div class="w-1 bg-pink-300 rounded-full animate-[bounce_0.8s_infinite] h-1/2"></div>
+                <div class="w-1 bg-pink-400 rounded-full animate-[bounce_1.5s_infinite] h-5/6"></div>
+                <div class="w-1 bg-pink-500 rounded-full animate-[bounce_1.1s_infinite] h-full"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Persistent Signature -->
+    <div class="absolute bottom-6 left-0 right-0 text-center z-50">
+        <p class="font-cairo font-bold text-lg md:text-xl tracking-wider signature-glow opacity-90 transition-all hover:opacity-100 hover:scale-105 duration-300">
+            من إعداد قيس جازي
+        </p>
+    </div>
+
+    <script>
+        const lyrics = [
+            "رهف.. يا نبضاً هائماً في ليالي الصمت يسرقني",
+            "من متاهات الشتات.. إليكِ يسكنني",
+            "أنا قيس جازي.. وحبي لم يكن يوماً مجرد حكاية",
+            "بل ربيعٌ سرمدي.. في عينيكِ بدايته ونهاياته",
+            "رهف يا منارة الروح.. وقيس جازي في هواكِ تائهون",
+            "نوركِ يُمهد الدرب.. والقلب باسمكِ يلهج",
+            "مصطفى الحسني فيكِ تجلى.. وبجاز الحب رواني",
+            "أنتِ الهدى.. وأنا الذي في بحر هواكِ يلقاني",
+            "كأنكِ البدر في كبد السماء لا يغيب",
+            "وقيس جازي في الأرض صبٌّ بذكراكِ يذوب",
+            "تجاوز المسافات في حبكِ عبادة",
+            "وهدنتكِ يا رهف للروح شهادة",
+            "رهف.. قيس جازي هنا.. ولن يبرحها.. أبداً ❤️"
+        ];
+
+        let currentLine = 0;
+        let isPlaying = false;
+        const textElement = document.getElementById('poetry-text');
+        const audio = document.getElementById('bg-music');
+
+        function startExperience() {
+            if (isPlaying) return;
+            isPlaying = true;
+
+            // محاولة تشغيل الأغنية
+            audio.play().catch(e => {
+                console.log("الرجاء التأكد من وضع ملف الأغنية بجانب ملف HTML");
+                alert("لتشغيل الموسيقى، تأكد من أن ملف الأغنية (gemini_music (1).mp3) موجود في نفس المجلد الذي تفتح منه هذا الموقع.");
+            });
+
+            const intro = document.getElementById('intro-screen');
+            const main = document.getElementById('main-content');
+            
+            intro.style.opacity = '0';
+            setTimeout(() => {
+                intro.style.display = 'none';
+                main.classList.remove('pointer-events-none');
+                main.style.opacity = '1';
+                
+                showNextLine();
+                setInterval(createFloatingElement, 2000);
+            }, 1000);
+        }
+
+        function showNextLine() {
+            textElement.classList.remove('fade-in-up');
+            
+            setTimeout(() => {
+                textElement.innerHTML = lyrics[currentLine];
+                textElement.classList.add('fade-in-up');
+                
+                currentLine++;
+                
+                let duration = Math.max(4000, lyrics[currentLine - 1].length * 100);
+                
+                if (currentLine < lyrics.length) {
+                    setTimeout(showNextLine, duration);
+                } else {
+                    setTimeout(() => {
+                        currentLine = 0;
+                        showNextLine();
+                    }, 8000);
+                }
+            }, 1500);
+        }
+
+        const symbols = ['❤', '✨', '🎵', '🌸'];
+        function createFloatingElement() {
+            const el = document.createElement('div');
+            el.className = 'floating-note';
+            el.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            el.style.fontSize = (Math.random() * 20 + 15) + 'px';
+            document.body.appendChild(el);
+            
+            setTimeout(() => {
+                el.remove();
+            }, 10000);
+        }
+
+        const canvas = document.getElementById('canvas-container');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = `rgba(255, ${Math.floor(Math.random() * 100 + 100)}, ${Math.floor(Math.random() * 155 + 100)}, ${Math.random() * 0.8})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.width * canvas.height) / 6000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+    </script>
+</body>
+</html>
+
+
